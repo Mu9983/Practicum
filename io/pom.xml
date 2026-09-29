@@ -5,11 +5,18 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.Mu9983</groupId>
-        <artifactId>service</artifactId>
+        <artifactId>express-platform</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>io</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.Mu9983</groupId>
+            <artifactId>service</artifactId>
+        </dependency>
+    </dependencies>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
