@@ -1,3 +1,5 @@
+package com.eighth;
+
 /**
  * 货架，内部管理多个货位
  */

@@ -1,4 +1,4 @@
-
+package com.eighth;
 
 /**
  * 单个货位
