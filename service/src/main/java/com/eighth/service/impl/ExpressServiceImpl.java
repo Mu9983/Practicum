@@ -1,12 +1,32 @@
 package com.eighth.service.impl;
 
-import com.eighth.Parcel;
+import com.eighth.*;
+import com.eighth.exception.BusinessException;
 import com.eighth.service.ExpressService;
+
+import java.time.LocalDateTime;
 
 public class ExpressServiceImpl implements ExpressService {
 
+    private final MyHashMap<String, Parcel> myHashMap = new MyHashMap<>();
+    private final MyQueue<Parcel> myQueue = new MyQueue<>();
+    private final MyStack<OperateRecord> myStack = new MyStack<>();
+
+    public MyHashMap<String, Parcel> getMyHashMap() {
+        return myHashMap;
+    }
+
     @Override
-    public void addParcel(int shelfIndex, Parcel parcel) {
+    public void addParcel(String pickCode, String receiverName, int shelf, int slot) {
+        if (pickCode.isEmpty() || receiverName.isEmpty()) {
+            throw new BusinessException("包裹信息不存在");
+        }
+        Parcel parcel = new Parcel(ParcelId.PARCEL_ID + 1, pickCode, receiverName,
+                LocalDateTime.now(), ParcelStatus.IN_STOCK, shelf, slot);
+        myHashMap.put(pickCode, parcel);
+        myQueue.enqueue(parcel);
+        OperateRecord record = new OperateRecord(OperateType.ADD, parcel.getId(), null, parcel);
+        myStack.push(record);
 
     }
 

@@ -17,6 +17,10 @@ public class MyQueue<E> {
         this.data = (E[]) new Object[capacity];
     }
 
+    public MyQueue() {
+        this(16);
+    }
+
     /**
      * 判断是否已满
      *

@@ -5,12 +5,14 @@ import com.eighth.Parcel;
 public interface ExpressService {
 
     /**
-     * 快递存入指定货架
+     * 新增快递信息
      *
-     * @param shelfIndex 货架下标，从0开始
-     * @param parcel     快递实体对象
+     * @param pickCode     取件码
+     * @param receiverName 用户名
+     * @param shelf   货架号
+     * @param slot 货位号
      */
-    void addParcel(int shelfIndex, Parcel parcel);
+    void addParcel(String pickCode, String receiverName, int shelf, int slot);
 
     /**
      * 用户取件，删除快递
