@@ -5,36 +5,33 @@ package com.eighth;
  */
 public class Shelf {
 
-    private int shelfNo;        //货架编号
     private int rowCount;       //行数
     private int colCount;       //列数
     private ShelfSlot[][] slots;//二维货位数组
 
+    public static final Integer SHELF_NUM = 10;
+    public static final Integer ROW = 5;
+    public static final Integer COL = 20;
+    public static final Integer SLOTS_PER_SHELF = ROW * COL;
+
     /**
      * 初始化货架，创建全部空货位
-     * @param shelfNo 货架号
      * @param rows 行数
      * @param cols 列数
      */
-    public Shelf(int shelfNo, int rows, int cols){
-        this.shelfNo = shelfNo;
+    public Shelf(int rows, int cols){
         this.rowCount = rows;
         this.colCount = cols;
         slots = new ShelfSlot[rowCount][colCount];
         //循环初始化每一个货位为未占用
         for(int i=0;i<rows;i++){
             for(int j=0;j<cols;j++){
-                slots[i][j] = new ShelfSlot();
+                ShelfSlot slot = new ShelfSlot();
+                slot.setRow(i);
+                slot.setCol(j);
+                slots[i][j] = slot;
             }
         }
-    }
-
-    public int getShelfNo() {
-        return shelfNo;
-    }
-
-    public void setShelfNo(int shelfNo) {
-        this.shelfNo = shelfNo;
     }
 
     public int getRowCount() {

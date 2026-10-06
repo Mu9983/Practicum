@@ -1,18 +1,17 @@
 package com.eighth.service;
 
 import com.eighth.Parcel;
+import com.eighth.ShelfSlot;
 
 public interface ExpressService {
 
     /**
      * 新增快递信息
-     *
-     * @param pickCode     取件码
      * @param receiverName 用户名
      * @param shelf   货架号
      * @param slot 货位号
      */
-    void addParcel(String pickCode, String receiverName, int shelf, int slot);
+    void addParcel(String receiverName, int shelf, ShelfSlot slot);
 
     /**
      * 用户取件，删除快递
@@ -58,13 +57,6 @@ public interface ExpressService {
      * @return 超时快递数组
      */
     Parcel[] getTimeoutExpress();
-
-    /**
-     * 将所有快递按取件码排序（调用SortUtil手写排序）
-     *
-     * @return 排序后的快递数组
-     */
-    Parcel[] sortByCode();
 
     /**
      * 将快递数据保存到本地txt文件

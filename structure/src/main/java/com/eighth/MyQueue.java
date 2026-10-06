@@ -106,14 +106,13 @@ public class MyQueue<E> {
     }
 
     /**
-     * 清除所有元素
+     * 清空循环队列
      */
     public void clear() {
+        // 循环队列：只重置头尾指针，不需要遍历数组，避免下标越界
         front = 0;
         rear = 0;
-        for (int i = 0; i < capacity; i++) {
-            data[i] = null;
-        }
     }
+
 
 }

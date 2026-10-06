@@ -6,7 +6,7 @@ package com.eighth;
 public enum ParcelStatus {
     IN_STOCK("在库"),
     PICKED("已取件"),
-    ABNORMAL("异常"),
+    TAKEN("出库"),
     EXPIRED("超期");
 
     private final String description;

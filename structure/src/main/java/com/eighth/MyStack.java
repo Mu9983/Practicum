@@ -60,10 +60,12 @@ public class MyStack<E> {
      */
     public E pop() {
         if (isEmpty()) {
-            return null;
+            throw new RuntimeException("栈为空，无法出栈");
         }
-        E ret = data[top];
-        data[top--] = null;
+        E ret = data[top - 1];
+        data[top - 1] = null;
+        top--;
+
         if (top > 0 && top == capacity / 4) {
             resize(capacity / 2);
         }
@@ -72,17 +74,19 @@ public class MyStack<E> {
 
     /**
      * 查看栈顶元素
+     *
      * @return 元素
      */
     public E peek() {
         if (isEmpty()) {
-            return null;
+            throw new RuntimeException("栈为空，无法获取栈顶");
         }
-        return data[top];
+        return data[top - 1];
     }
 
     /**
      * 栈大小
+     *
      * @return 大小
      */
     public int size() {
@@ -91,11 +95,12 @@ public class MyStack<E> {
 
     /**
      * 扩容/缩容
+     *
      * @param newCapacity 新栈容量
      */
     public void resize(int newCapacity) {
         E[] newData = (E[]) new Object[newCapacity];
-        if (top >= 0) System.arraycopy(data, 0, newData, 0, top);
+        System.arraycopy(data, 0, newData, 0, top);
         data = newData;
         capacity = newCapacity;
     }
