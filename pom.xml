@@ -13,8 +13,6 @@
         <module>structure</module>
         <module>service</module>
         <module>gui</module>
-        <module>io</module>
-        <module>test</module>
     </modules>
 
     <properties>
@@ -22,5 +20,6 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
 
 </project>

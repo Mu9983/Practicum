@@ -11,9 +11,9 @@ public class Parcel {
     private String pickCode;    //取件码：哈希表检索key
     private String receiverName;//收件人
     private LocalDateTime arriveTime;    //到站时间戳
-    private ParcelStatus status;//包裹状态 枚举：IN_STOCK 在库 / PICKED 已取件 / TAKEN 出库 / EXPIRED 超期
+    private ParcelStatus status;//包裹状态 枚举：IN_STOCK 在库 / ABNORMAL 异常 / TAKEN 出库 / EXPIRED 超期
     private int shelf;          //所属货架编号
-    private ShelfSlot slot;           //货位编号
+    private ShelfSlot slot;     //货位编号
 
     public Parcel(Integer id, String pickCode, String receiverName, LocalDateTime arriveTime, ParcelStatus status, int shelf, ShelfSlot slot) {
         this.id = id;

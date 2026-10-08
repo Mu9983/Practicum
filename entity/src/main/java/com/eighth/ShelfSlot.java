@@ -55,17 +55,13 @@ public class ShelfSlot {
 
     @Override
     public String toString() {
-        return "{" +
-                "row=" + row +
-                ", col=" + col +
-                ", occupied=" + occupied +
-                ", parcel_id=" + parcel.getId() +
-                '}';
+        return "{" + "row=" + row + ", col=" + col + ", occupied=" + occupied + ", parcel_id=" + parcel.getId() + '}';
     }
 
     /**
      * 字符串解析，格式示例："row=1,col=2,occupied=true"
      * 文件读取时使用；注意：此处不解析Parcel对象，只解析货位坐标与占用标记
+     *
      * @param s 字符串
      * @return ShelfSlot实例
      */

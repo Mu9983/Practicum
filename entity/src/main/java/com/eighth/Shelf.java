@@ -16,16 +16,17 @@ public class Shelf {
 
     /**
      * 初始化货架，创建全部空货位
+     *
      * @param rows 行数
      * @param cols 列数
      */
-    public Shelf(int rows, int cols){
+    public Shelf(int rows, int cols) {
         this.rowCount = rows;
         this.colCount = cols;
         slots = new ShelfSlot[rowCount][colCount];
         //循环初始化每一个货位为未占用
-        for(int i=0;i<rows;i++){
-            for(int j=0;j<cols;j++){
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
                 ShelfSlot slot = new ShelfSlot();
                 slot.setRow(i);
                 slot.setCol(j);
