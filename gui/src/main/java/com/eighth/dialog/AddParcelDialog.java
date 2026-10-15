@@ -1,8 +1,10 @@
 package com.eighth.dialog;
-
+import com.eighth.Parcel;
+import com.eighth.Shelf;
 import com.eighth.ShelfSlot;
 import com.eighth.exception.BusinessException;
 import com.eighth.service.ExpressService;
+import com.eighth.utils.PickCodeUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,47 +15,67 @@ import java.awt.*;
 public class AddParcelDialog extends JDialog {
     private final ExpressService service;
     private final Runnable callback;
+    // 菜单按钮模式预生成候选取件码，双击模式为null
+    private String candidatePickCode = null;
 
-    // 普通构造：默认货架1,行1,列1（菜单、右下角按钮调用）
-    public AddParcelDialog(JFrame owner, ExpressService service, Runnable callback){
-        this(owner, service, 1, 1, 1, callback);
+    // =========【构造：菜单/底部按钮调用：自动查找第一个空闲货位】=========
+    public AddParcelDialog(JFrame owner, ExpressService service, Runnable callback) {
+        super(owner,"新增包裹入库",true);
+        this.service = service;
+        this.callback = callback;
+
+        int[] freePos = service.findFirstFreeSlot();
+        if(freePos == null){
+            JOptionPane.showMessageDialog(owner,"暂无空闲货位，无法新增包裹！","提示",JOptionPane.WARNING_MESSAGE);
+            dispose();
+            return;
+        }
+        int uiShelf = freePos[0] + 1;
+        int uiRow = freePos[1] + 1;
+        int uiCol = freePos[2] + 1;
+
+        try {
+            candidatePickCode = PickCodeUtils.generateUniquePickCode(code -> service.containsKey(code));
+        } catch (BusinessException e) {
+            JOptionPane.showMessageDialog(owner, e.getMessage(),"错误",JOptionPane.ERROR_MESSAGE);
+            dispose();
+            return;
+        }
+
+        initUi(uiShelf, uiRow, uiCol);
+        setSize(360,240);
+        setLocationRelativeTo(owner);
+        setVisible(true);
     }
 
-    // 重载构造：支持传入预填UI坐标(1开始)，双击空货位调用
+    // =========【原有重载构造：双击空货位调用，预填传入的UI坐标，完全保留不变】=========
     public AddParcelDialog(JFrame owner, ExpressService service, int initUiShelf, int initUiRow, int initUiCol, Runnable callback){
         super(owner,"新增包裹入库",true);
         this.service = service;
         this.callback = callback;
+        this.candidatePickCode = null;
         initUi(initUiShelf, initUiRow, initUiCol);
         setSize(360,240);
         setLocationRelativeTo(owner);
         setVisible(true);
     }
 
-    /**
-     * @param initUiShelf UI货架 1‑10
-     * @param initUiRow   UI行 1‑5
-     * @param initUiCol   UI列 1‑20
-     */
     private void initUi(int initUiShelf, int initUiRow, int initUiCol){
         JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(5,2,6,6));
-
+        panel.setLayout(new GridLayout(4,2,6,6));
         JTextField receiverField = new JTextField();
-        // UI:货架1~10；底层0‑9，使用传入的初始值
-        JSpinner shelfSpinner = new JSpinner(new SpinnerNumberModel(initUiShelf,1,10,1));
-        // UI:行1‑5；底层0‑4
-        JSpinner rowSpinner = new JSpinner(new SpinnerNumberModel(initUiRow,1,5,1));
-        // UI:列1‑20；底层0‑19
-        JSpinner colSpinner = new JSpinner(new SpinnerNumberModel(initUiCol,1,20,1));
+
+        JSpinner shelfSpinner = new JSpinner(new SpinnerNumberModel(initUiShelf,1, Shelf.SHELF_NUM,1));
+        JSpinner rowSpinner = new JSpinner(new SpinnerNumberModel(initUiRow,1, Shelf.ROW,1));
+        JSpinner colSpinner = new JSpinner(new SpinnerNumberModel(initUiCol,1, Shelf.COL,1));
 
         panel.add(new JLabel("收件人姓名："));
         panel.add(receiverField);
-        panel.add(new JLabel("货架编号(1‑10)"));
+        panel.add(new JLabel("货架编号(1‑n)"));
         panel.add(shelfSpinner);
-        panel.add(new JLabel("行号(1‑5)"));
+        panel.add(new JLabel("行号(1‑n)"));
         panel.add(rowSpinner);
-        panel.add(new JLabel("列号(1‑20)"));
+        panel.add(new JLabel("列号(1‑n)"));
         panel.add(colSpinner);
 
         JPanel btnPanel = new JPanel();
@@ -67,9 +89,9 @@ public class AddParcelDialog extends JDialog {
         getContentPane().add(btnPanel,BorderLayout.SOUTH);
 
         cancelBtn.addActionListener(e->dispose());
+
         okBtn.addActionListener(e->{
             String name = receiverField.getText().trim();
-            // UI拿到1开始的值
             int shelfUi = (Integer)shelfSpinner.getValue();
             int rowUi = (Integer)rowSpinner.getValue();
             int colUi = (Integer)colSpinner.getValue();
@@ -79,16 +101,39 @@ public class AddParcelDialog extends JDialog {
                 return;
             }
             try{
-                // UI输入(1‑10,1‑5,1‑20) → 转换底层0下标
                 int shelf = shelfUi - 1;
                 int row = rowUi -1;
                 int col = colUi -1;
-
                 ShelfSlot slot = new ShelfSlot();
                 slot.setRow(row);
                 slot.setCol(col);
-                service.addParcel(name,shelf,slot);
+
+                //执行入库，拿到返回的包裹对象
+                Parcel parcel;
+                if(candidatePickCode != null){
+                    parcel = service.addParcel(name,shelf,slot,candidatePickCode);
+                }else{
+                    parcel = service.addParcel(name,shelf,slot);
+                }
+                //关闭新增弹窗
                 dispose();
+
+                //=====入库成功，弹出信息弹窗=====
+                String info = String.format(
+                        "✅包裹入库成功\n" +
+                                "货架号：%d\n" +
+                                "行号：%d\n" +
+                                "列号：%d\n" +
+                                "收件人：%s\n" +
+                                "取件码：%s",
+                        parcel.getShelf()+1,
+                        parcel.getSlot().getRow()+1,
+                        parcel.getSlot().getCol()+1,
+                        parcel.getReceiverName(),
+                        parcel.getPickCode()
+                );
+                JOptionPane.showMessageDialog(null, info,"入库成功",JOptionPane.INFORMATION_MESSAGE);
+
                 if(callback != null){
                     callback.run();
                 }

@@ -1,6 +1,7 @@
 package com.eighth.gui;
 
 import com.eighth.*;
+import com.eighth.exception.BusinessException;
 import com.eighth.service.ExpressService;
 
 import javax.swing.*;
@@ -30,7 +31,6 @@ public class ShelfCanvas extends JPanel {
         int singleShelfHeight = (CELL_H * Shelf.ROW) + GAP * 12 + 35;
         int totalHeight = Shelf.SHELF_NUM * (singleShelfHeight + SHELF_VERTICAL_GAP);
         setPreferredSize(new Dimension(1300, totalHeight));
-
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -112,9 +112,10 @@ public class ShelfCanvas extends JPanel {
                 infoText.setEditable(false);
                 infoText.setFont(new Font("Dialog", Font.PLAIN, 13));
                 String info = String.format(
-                        "该货位为空\n" +
-                                "货架号：%d\n" +
-                                "货位号：%d",
+                        """
+                                该货位为空
+                                货架号：%d
+                                货位号：%d""",
                         shelfShow,
                         posIndex
                 );
@@ -145,10 +146,9 @@ public class ShelfCanvas extends JPanel {
 
             // ==========非空货位逻辑==========
             final Parcel finalClickParcel = clickParcel;
-            JDialog dialog = new JDialog((JFrame) SwingUtilities.getWindowAncestor(this), "货位信息", true);
-            dialog.setSize(380, 240);
+            JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "包裹详情", true);
             dialog.setLocationRelativeTo(null);
-            dialog.setResizable(false);
+            dialog.setResizable(true);
 
             JPanel contentPanel = new JPanel();
             contentPanel.setLayout(new BorderLayout(10, 10));
@@ -158,56 +158,220 @@ public class ShelfCanvas extends JPanel {
             infoText.setEditable(false);
             infoText.setFont(new Font("Dialog", Font.PLAIN, 13));
 
-            String info = String.format(
-                    "包裹ID：%d\n" +
-                            "取件码：%s\n" +
-                            "收件人：%s\n" +
-                            "状态：%s\n" +
-                            "货架号：%d\n" +
-                            "货位号：%d",
-                    clickParcel.getId(),
-                    clickParcel.getPickCode(),
-                    clickParcel.getReceiverName(),
-                    clickParcel.getStatus().getDescription(),
-                    shelfShow,
-                    posIndex
-            );
+            //组装详情文本，处理null，显示“无”
+            String info;
+            if (finalClickParcel.getStatus() == ParcelStatus.ABNORMAL) {
+                String levelStr = finalClickParcel.getAbnormalLevel() == null ? "无" : finalClickParcel.getAbnormalLevel().toString();
+                String reasonStr = finalClickParcel.getAbnormalReason() == null ? "无" : finalClickParcel.getAbnormalReason();
+                info = String.format(
+                        "包裹ID：%d\n" +
+                                "取件码：%s\n" +
+                                "收件人：%s\n" +
+                                "状态：%s\n" +
+                                "货架号：%d\n" +
+                                "货位号：%d\n" +
+                                "异常等级：%s\n" +
+                                "异常原因：%s",
+                        finalClickParcel.getId(),
+                        finalClickParcel.getPickCode(),
+                        finalClickParcel.getReceiverName(),
+                        finalClickParcel.getStatus().getDescription(),
+                        finalClickParcel.getShelf() + 1,
+                        finalClickParcel.getSlot().getRow() * Shelf.COL + finalClickParcel.getSlot().getCol() + 1,
+                        levelStr,
+                        reasonStr
+                );
+            } else {
+                info = String.format(
+                        "包裹ID：%d\n" +
+                                "取件码：%s\n" +
+                                "收件人：%s\n" +
+                                "状态：%s\n" +
+                                "货架号：%d\n" +
+                                "货位号：%d",
+                        finalClickParcel.getId(),
+                        finalClickParcel.getPickCode(),
+                        finalClickParcel.getReceiverName(),
+                        finalClickParcel.getStatus().getDescription(),
+                        finalClickParcel.getShelf() + 1,
+                        finalClickParcel.getSlot().getRow() * Shelf.COL + finalClickParcel.getSlot().getCol() + 1
+                );
+            }
             infoText.setText(info);
             contentPanel.add(infoText, BorderLayout.CENTER);
 
             JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
-            JButton btnEnqueue = new JButton("加入取件队列");
+            JButton btnEnqueue = new JButton("加入普通取件队列");
+            JButton btnMarkAbnormal = new JButton("标记为异常件");
+            JButton btnResolveAbnormal = new JButton("解除异常");
+            JButton btnTransfer = new JButton("包裹转移");
             JButton btnClose = new JButton("关闭");
+
+            ParcelStatus status = finalClickParcel.getStatus();
+            if (status == ParcelStatus.TAKEN) {
+                btnEnqueue.setEnabled(false);
+                btnMarkAbnormal.setEnabled(false);
+                btnResolveAbnormal.setEnabled(false);
+                btnTransfer.setEnabled(false);
+            } else if (status == ParcelStatus.ABNORMAL) {
+                btnEnqueue.setEnabled(false);
+                btnMarkAbnormal.setEnabled(false);
+                btnResolveAbnormal.setEnabled(true);
+                btnTransfer.setEnabled(true);
+            } else { // IN_STOCK
+                btnEnqueue.setEnabled(true);
+                btnMarkAbnormal.setEnabled(true);
+                btnResolveAbnormal.setEnabled(false);
+                btnTransfer.setEnabled(true);
+            }
+
+
             btnPanel.add(btnEnqueue);
+            btnPanel.add(btnMarkAbnormal);
+            btnPanel.add(btnResolveAbnormal);
+            btnPanel.add(btnTransfer);
             btnPanel.add(btnClose);
             contentPanel.add(btnPanel, BorderLayout.SOUTH);
 
             dialog.add(contentPanel);
 
             btnEnqueue.addActionListener(ev -> {
-                if (finalClickParcel.getStatus() == ParcelStatus.TAKEN) {
-                    JOptionPane.showMessageDialog(dialog, "该包裹已经出库，不能加入队列！", "提示", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
                 PickTask task = new PickTask(System.currentTimeMillis(), finalClickParcel, System.currentTimeMillis(), 0);
                 boolean ok = mainPanel.enqueueTask(task);
                 if (ok) {
-                    JOptionPane.showMessageDialog(dialog, "✅已成功加入取件队列");
+                    JOptionPane.showMessageDialog(dialog, "✅已成功加入普通取件队列");
                     mainPanel.refreshAll();
                     dialog.dispose();
                 } else {
-                    JOptionPane.showMessageDialog(dialog, "❌队列已满，无法加入！", "提示", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(dialog, "❌队列已满，加入失败", "提示", JOptionPane.WARNING_MESSAGE);
                 }
             });
 
-            btnClose.addActionListener(ev -> dialog.dispose());
+            btnMarkAbnormal.addActionListener(ev -> {
+                JPanel inputPanel = new JPanel();
+                inputPanel.setLayout(new GridLayout(2,2,8,8));
+                inputPanel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+
+                JTextField tfReason = new JTextField();
+                // 异常等级下拉框，固定 1,2,3
+                JComboBox<Integer> cbLevel = new JComboBox<>();
+                cbLevel.addItem(1);
+                cbLevel.addItem(2);
+                cbLevel.addItem(3);
+                cbLevel.setSelectedItem(2); // 默认选中2（中等）
+
+                inputPanel.add(new JLabel("异常原因："));
+                inputPanel.add(tfReason);
+                inputPanel.add(new JLabel("异常等级(1低，2中，3高)："));
+                inputPanel.add(cbLevel);
+
+                int option = JOptionPane.showConfirmDialog(dialog, inputPanel, "标记异常", JOptionPane.OK_CANCEL_OPTION);
+                if (option != JOptionPane.OK_OPTION) {
+                    return;
+                }
+
+                String reason = tfReason.getText().trim();
+                Integer level = (Integer) cbLevel.getSelectedItem();
+
+                if(reason.isBlank()){
+                    JOptionPane.showMessageDialog(dialog,"异常原因不能为空");
+                    return;
+                }
+
+                try {
+                    service.markAbnormal(finalClickParcel.getPickCode(), reason, level);
+                    PickTask task = new PickTask(System.currentTimeMillis(), finalClickParcel, System.currentTimeMillis(), level);
+                    boolean addOk = mainPanel.enqueuePriorityTask(task);
+
+                    StringBuilder msgSb = new StringBuilder();
+                    msgSb.append("✅标记异常成功\n");
+                    msgSb.append("异常原因：").append(reason).append("\n");
+                    msgSb.append("异常等级：").append(level).append("\n");
+                    if (addOk) {
+                        msgSb.append("✅已自动加入异常优先任务队列");
+                    } else {
+                        msgSb.append("⚠️优先队列加入失败");
+                    }
+                    JOptionPane.showMessageDialog(dialog, msgSb.toString());
+                    mainPanel.refreshAll();
+                    dialog.dispose();
+                } catch (BusinessException ex) {
+                    JOptionPane.showMessageDialog(dialog, ex.getMessage(), "操作失败", JOptionPane.ERROR_MESSAGE);
+                }
+            });
+
+            btnResolveAbnormal.addActionListener(ev -> {
+                try {
+                    service.resolveAbnormal(finalClickParcel.getPickCode());
+                    JOptionPane.showMessageDialog(dialog, "✅已解除异常，包裹恢复正常在库，异常信息已清空");
+                    mainPanel.refreshAll();
+                    dialog.dispose();
+                } catch (BusinessException ex) {
+                    JOptionPane.showMessageDialog(dialog, ex.getMessage(), "操作失败", JOptionPane.ERROR_MESSAGE);
+                }
+            });
+
+            //=====【双击弹窗：包裹转移，仅输入目标位置】=====
+            btnTransfer.addActionListener(ev -> {
+                JDialog transferDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(ShelfCanvas.this),"设置目标货位",true);
+                transferDialog.setSize(320,220);
+                transferDialog.setLocationRelativeTo(dialog);
+                JPanel panel = new JPanel(new GridLayout(3,2,8,8));
+                panel.setBorder(BorderFactory.createEmptyBorder(12,12,12,12));
+
+                // UI展示1开始
+                JSpinner spinDstShelf = new JSpinner(new SpinnerNumberModel(1,1,Shelf.SHELF_NUM,1));
+                JSpinner spinDstRow = new JSpinner(new SpinnerNumberModel(1,1,Shelf.ROW,1));
+                JSpinner spinDstCol = new JSpinner(new SpinnerNumberModel(1,1,Shelf.COL,1));
+
+                panel.add(new JLabel("目标货架:"));
+                panel.add(spinDstShelf);
+                panel.add(new JLabel("目标行:"));
+                panel.add(spinDstRow);
+                panel.add(new JLabel("目标列:"));
+                panel.add(spinDstCol);
+
+                JPanel btnPanelLocal = new JPanel();
+                JButton okBtn = new JButton("确认转移");
+                JButton cancelBtn = new JButton("取消");
+                btnPanelLocal.add(okBtn);
+                btnPanelLocal.add(cancelBtn);
+
+                transferDialog.add(panel,BorderLayout.CENTER);
+                transferDialog.add(btnPanelLocal,BorderLayout.SOUTH);
+
+                okBtn.addActionListener(e2 -> {
+                    int dstShelfUi = (Integer) spinDstShelf.getValue();
+                    int dstRowUi = (Integer) spinDstRow.getValue();
+                    int dstColUi = (Integer) spinDstCol.getValue();
+
+                    int dstShelf = dstShelfUi - 1;
+                    int dstRow = dstRowUi -1;
+                    int dstCol = dstColUi -1;
+                    try {
+                        service.transferParcel(finalClickParcel.getPickCode(), dstShelf, dstRow, dstCol);
+                        JOptionPane.showMessageDialog(transferDialog,"✅包裹转移成功");
+                        mainPanel.refreshAll();
+                        transferDialog.dispose();
+                        dialog.dispose(); //关闭原包裹详情弹窗
+                    }catch (BusinessException ex){
+                        JOptionPane.showMessageDialog(transferDialog,ex.getMessage(),"转移失败",JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+                cancelBtn.addActionListener(e2 -> transferDialog.dispose());
+                transferDialog.setVisible(true);
+            });
+
+            btnClose.addActionListener(e -> dialog.dispose());
+
+            dialog.pack();
+            dialog.setLocationRelativeTo(null);
             dialog.setVisible(true);
 
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(null, "读取货位异常：" + ex.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
         }
     }
-
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -224,18 +388,17 @@ public class ShelfCanvas extends JPanel {
         int startY = 15;
 
         for (int shelfNo = 0; shelfNo < Shelf.SHELF_NUM; shelfNo++) {
-            int baseX = startX;
             int baseY = startY + shelfNo * (shelfUnitH + SHELF_VERTICAL_GAP);
 
             g2d.setFont(shelfTitleFont);
             g2d.setColor(Color.BLACK);
-            g2d.drawString("【货架" + (shelfNo + 1) + "】", baseX, baseY - 6);
+            g2d.drawString("【货架" + (shelfNo + 1) + "】", startX, baseY - 6);
 
             Parcel[] shelfParcelList = service.getShelfExpress(shelfNo);
 
             for (int r = 0; r < Shelf.ROW; r++) {
                 for (int c = 0; c < Shelf.COL; c++) {
-                    int cellX = baseX + GAP + c * (CELL_W + GAP);
+                    int cellX = startX + GAP + c * (CELL_W + GAP);
                     int cellY = baseY + GAP + r * (CELL_H + GAP);
 
                     int posIndex = r * Shelf.COL + c + 1;
@@ -330,4 +493,16 @@ public class ShelfCanvas extends JPanel {
         g2d.drawRect(300, legendY, 18, 18);
         g2d.drawString("查询高亮", 325, legendY + 13);
     }
+
+    /**
+     * 货架配置修改后调用，重新计算画布尺寸
+     */
+    public void resetCanvasSize() {
+        int singleShelfHeight = (CELL_H * Shelf.ROW) + GAP * 12 + 35;
+        int totalHeight = Shelf.SHELF_NUM * (singleShelfHeight + SHELF_VERTICAL_GAP);
+        setPreferredSize(new Dimension(1300, totalHeight));
+        revalidate();
+        repaint();
+    }
+
 }

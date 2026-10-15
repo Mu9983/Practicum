@@ -1,10 +1,8 @@
 package com.eighth;
-
 /**
- * 自定义队列
+ * 自定义循环队列，支持自动resize扩容
  */
 public class MyQueue<E> {
-
     private E[] data;
     private int front;
     private int rear;
@@ -14,7 +12,7 @@ public class MyQueue<E> {
         this.capacity = capacity + 1;
         this.front = 0;
         this.rear = 0;
-        this.data = (E[]) new Object[capacity];
+        this.data = (E[]) new Object[this.capacity];
     }
 
     public MyQueue() {
@@ -22,8 +20,26 @@ public class MyQueue<E> {
     }
 
     /**
+     * 内部自动扩容：容量翻倍
+     */
+    private void resize() {
+        int newCapacity = capacity * 2;
+        E[] newData = (E[]) new Object[newCapacity];
+        int size = size();
+        // 将环形队列元素复制到新数组从0开始
+        int oldIndex = front;
+        for (int i = 0; i < size; i++) {
+            newData[i] = data[oldIndex];
+            oldIndex = (oldIndex + 1) % capacity;
+        }
+        data = newData;
+        capacity = newCapacity;
+        front = 0;
+        rear = size;
+    }
+
+    /**
      * 判断是否已满
-     *
      * @return 满：true，未满：false
      */
     public boolean isFull() {
@@ -32,7 +48,6 @@ public class MyQueue<E> {
 
     /**
      * 判断是否为空
-     *
      * @return 空：true，非空：false
      */
     public boolean isEmpty() {
@@ -40,14 +55,13 @@ public class MyQueue<E> {
     }
 
     /**
-     * 入队
-     *
+     * 入队，满则自动扩容
      * @param e 元素
-     * @return 成功：true，失败：false
+     * @return 成功：true
      */
     public boolean enqueue(E e) {
         if (isFull()) {
-            return false;
+            resize();
         }
         data[rear] = e;
         rear = (rear + 1) % capacity;
@@ -56,7 +70,6 @@ public class MyQueue<E> {
 
     /**
      * 出队
-     *
      * @return 出队的元素
      */
     public E dequeue() {
@@ -71,7 +84,6 @@ public class MyQueue<E> {
 
     /**
      * 查看队首，不出队
-     *
      * @return 队首元素
      */
     public E peek() {
@@ -83,7 +95,6 @@ public class MyQueue<E> {
 
     /**
      * 查看队列实际大小
-     *
      * @return 大小
      */
     public int size() {
@@ -109,10 +120,7 @@ public class MyQueue<E> {
      * 清空循环队列
      */
     public void clear() {
-        // 循环队列：只重置头尾指针，不需要遍历数组，避免下标越界
         front = 0;
         rear = 0;
     }
-
-
 }

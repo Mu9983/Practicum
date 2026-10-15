@@ -1,5 +1,8 @@
 package com.eighth;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 /**
  * 自定义HashMap类
  *
@@ -122,7 +125,7 @@ public class MyHashMap<K, V> {
         Node<K, V> curr = prev.next;
         while (curr != null) {
             if (curr.key.equals(key)) {
-                V  value = curr.value;
+                V value = curr.value;
                 prev.next = curr.next;
                 size--;
                 return value;
@@ -135,25 +138,38 @@ public class MyHashMap<K, V> {
 
     /**
      * 是否包含key的节点
+     *
      * @return 是：true，否：false
      */
-    public boolean containsKey(K key){
+    public boolean containsKey(K key) {
         return get(key) != null;
     }
 
     /**
      * 返回实际大小
      */
-    public int size(){
+    public int size() {
         return size;
     }
 
     /**
      * 清除所有元素
      */
-    public void clear(){
+    public void clear() {
         capacity = 16;
-        table = (Node<K,V>[]) new Node[capacity];
+        table = (Node<K, V>[]) new Node[capacity];
         size = 0;
+    }
+
+    public Collection<V> values() {
+        ArrayList<V> res = new ArrayList<>();
+        for (Node<K, V> kvNode : table) {
+            Node<K, V> p = kvNode;
+            while (p != null) {
+                res.add(p.value);
+                p = p.next;
+            }
+        }
+        return res;
     }
 }

@@ -14,6 +14,9 @@ public class Parcel {
     private ParcelStatus status;//包裹状态 枚举：IN_STOCK 在库 / ABNORMAL 异常 / TAKEN 出库 / EXPIRED 超期
     private int shelf;          //所属货架编号
     private ShelfSlot slot;     //货位编号
+    private Integer abnormalLevel;   //异常等级，null代表非异常件
+    private String abnormalReason;   //异常原因
+    private Long storeTime;         //到库时间戳
 
     public Parcel(Integer id, String pickCode, String receiverName, LocalDateTime arriveTime, ParcelStatus status, int shelf, ShelfSlot slot) {
         this.id = id;
@@ -23,6 +26,16 @@ public class Parcel {
         this.status = status;
         this.shelf = shelf;
         this.slot = slot;
+    }
+
+    /**
+     * 获取存放时长毫秒；storeTime为null返回0
+     */
+    public long getStoreDurationMs(){
+        if(storeTime == null){
+            return 0;
+        }
+        return System.currentTimeMillis() - storeTime;
     }
 
     public Parcel() {
@@ -85,6 +98,30 @@ public class Parcel {
         this.slot = slot;
     }
 
+    public Integer getAbnormalLevel() {
+        return abnormalLevel;
+    }
+
+    public void setAbnormalLevel(Integer abnormalLevel) {
+        this.abnormalLevel = abnormalLevel;
+    }
+
+    public String getAbnormalReason() {
+        return abnormalReason;
+    }
+
+    public void setAbnormalReason(String abnormalReason) {
+        this.abnormalReason = abnormalReason;
+    }
+
+    public Long getStoreTime() {
+        return storeTime;
+    }
+
+    public void setStoreTime(Long storeTime) {
+        this.storeTime = storeTime;
+    }
+
     @Override
     public String toString() {
         return "Parcel{" +
@@ -95,6 +132,8 @@ public class Parcel {
                 ", status=" + status +
                 ", shelf=" + shelf +
                 ", slot=" + slot +
+                ", abnormalLevel=" + abnormalLevel +
+                ", abnormalReason='" + abnormalReason + '\'' +
                 '}';
     }
 }
